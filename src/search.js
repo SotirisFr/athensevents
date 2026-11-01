@@ -14,8 +14,8 @@ import { extractLinks, extractJsonLd, extractText } from './extract.js';
 import { askClaude } from './claude.js';
 import { getCached, setCached, saveCache } from './cache.js';
 
-// Bump when the Claude prompt changes, so old summaries are not reused.
-const CACHE_VERSION = 'v2:';
+// Bump when the Claude prompt or page text changes, so old summaries are not reused.
+const CACHE_VERSION = 'v3:';
 const LINKS_PER_CALL = 150;
 const PAGES_PER_CALL = 5;
 

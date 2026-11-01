@@ -41,6 +41,12 @@ test('extractText drops scripts and menus', () => {
   assert.equal(text, 'T Συναυλία απόψε');
 });
 
+test('extractText keeps ticket prices found only in scripts', () => {
+  const html =
+    '<title>T</title><main><p>Live</p><script>x = {"discount-name":"early bird - Κανονικό","price":32.0},{"discount-name":"presale","price":35.0},{"price":0}</script></main>';
+  assert.equal(extractText(html), 'T Τιμές εισιτηρίων: 32 € (early bird - Κανονικό), 35 € (presale) Live');
+});
+
 const base = {
   occurrences: [{ start: '2026-11-05T21:00' }, { start: '2026-11-20T21:00' }],
   price_min: 15,

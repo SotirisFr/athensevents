@@ -85,8 +85,25 @@ export function extractJsonLd(html) {
   return out;
 }
 
+/**
+ * Ticket prices that only appear inside page scripts, as on more.com, where
+ * the booking widget carries `"discount-name":"…","price":32.0`.
+ */
+export function extractScriptPrices(html) {
+  const out = new Set();
+  const re = /(?:"discount-name"\s*:\s*"([^"]{1,60})"\s*,\s*)?"price"\s*:\s*"?(\d+(?:\.\d+)?)/g;
+  let m;
+  while ((m = re.exec(html)) && out.size < 15) {
+    const price = Number(m[2]);
+    if (price > 0) out.add(m[1] ? `${price} € (${decode(m[1])})` : `${price} €`);
+  }
+  return [...out];
+}
+
 /** The readable text of an event page, without menus, footers and scripts. */
 export function extractText(html, maxChars = 5000) {
+  const prices = extractScriptPrices(html);
+  const priceLine = prices.length ? `\nΤιμές εισιτηρίων: ${prices.join(', ')}` : '';
   const title = toText((html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '');
   const description = decode(
     (html.match(/<meta\b[^>]*name\s*=\s*["']description["'][^>]*content\s*=\s*["']([^"']*)["']/i) || [])[1] || '',
@@ -95,5 +112,5 @@ export function extractText(html, maxChars = 5000) {
   body = body
     .replace(/<(script|style|noscript|svg|template|iframe)\b[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<(nav|header|footer|form)\b[\s\S]*?<\/\1>/gi, ' ');
-  return clean(`${title}\n${clean(description)}\n${toText(body)}`).slice(0, maxChars);
+  return clean(`${title}\n${clean(description)}${priceLine}\n${toText(body)}`).slice(0, maxChars);
 }
