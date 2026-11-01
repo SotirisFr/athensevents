@@ -14,6 +14,8 @@ import { extractLinks, extractJsonLd, extractText } from './extract.js';
 import { askClaude } from './claude.js';
 import { getCached, setCached, saveCache } from './cache.js';
 
+// Bump when the Claude prompt changes, so old summaries are not reused.
+const CACHE_VERSION = 'v2:';
 const LINKS_PER_CALL = 150;
 const PAGES_PER_CALL = 5;
 
@@ -98,12 +100,12 @@ async function describePages(pages) {
   const prompt = `Σήμερα είναι ${today()}. Για κάθε σελίδα εκδήλωσης παρακάτω, δώσε στοιχεία στα ελληνικά. Χρησιμοποίησε μόνο ό,τι γράφει η σελίδα· μην επινοείς τίποτα.
 
 - index: ο αριθμός της σελίδας.
-- is_event: false αν δεν είναι σελίδα συγκεκριμένης εκδήλωσης.
+- is_event: false αν δεν είναι σελίδα συγκεκριμένης εκδήλωσης, ή αν η εκδήλωση έχει ήδη γίνει (π.χ. το κείμενο μιλά για παλιότερη εποχή ή έτος) και δεν αναφέρεται νέα ημερομηνία.
 - in_attica: true αν γίνεται στην Αθήνα ή αλλού στην Αττική.
 - title: ο τίτλος όπως τον γράφει η σελίδα (στα ελληνικά αν υπάρχει).
 - summary: έως 40 λέξεις στα ελληνικά, τι είναι και γιατί να πάει κανείς.
 - venue, address: χώρος και διεύθυνση, αν υπάρχουν.
-- occurrences: κάθε συγκεκριμένη ημερομηνία/ώρα που αναφέρεται (έως 40), σε μορφή "YYYY-MM-DDTHH:MM" ή "YYYY-MM-DD" αν δεν δίνεται ώρα. Αν λείπει το έτος, βάλε το επόμενο που ταιριάζει από σήμερα.
+- occurrences: κάθε συγκεκριμένη ημερομηνία/ώρα που αναφέρεται (έως 40), σε μορφή "YYYY-MM-DDTHH:MM" ή "YYYY-MM-DD" αν δεν δίνεται ώρα. Αν λείπει το έτος, συμπέρανέ το από το κείμενο (εποχή, ημέρα της εβδομάδας, άλλες ημερομηνίες)· αλλιώς βάλε το επόμενο που ταιριάζει από σήμερα. Μη βάζεις ημερομηνία που δεν γράφει η σελίδα.
 - run_start, run_end, schedule: για παραστάσεις ή εκθέσεις που τρέχουν για διάστημα με τακτικό πρόγραμμα, η πρώτη και η τελευταία ημέρα (YYYY-MM-DD) και το πρόγραμμα σε λίγες λέξεις (π.χ. "Πέμ.–Κυρ. 21:00"). Αλλιώς null.
 - price_min, price_max: φθηνότερο και ακριβότερο κανονικό εισιτήριο σε ευρώ. null αν δεν αναφέρεται τιμή.
 - is_free: true μόνο αν η είσοδος είναι ελεύθερη/δωρεάν.
@@ -168,7 +170,7 @@ export async function search(q, emit) {
         // Already-summarized pages skip Claude entirely.
         const fresh = [];
         for (const l of links.values()) {
-          const cached = getCached(l.url);
+          const cached = getCached(CACHE_VERSION + l.url);
           if (cached) report(cached);
           else fresh.push(l);
         }
@@ -199,7 +201,7 @@ export async function search(q, emit) {
                 if (!page) continue;
                 const full = { ...ev, url: page.url, source: source.name };
                 delete full.index;
-                setCached(page.url, full);
+                setCached(CACHE_VERSION + page.url, full);
                 report(full);
               }
             } catch (e) {
