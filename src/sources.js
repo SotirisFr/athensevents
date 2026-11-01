@@ -22,8 +22,9 @@ export const SOURCES = [
     ],
     // e.g. /gr-el/tickets/theater/mcneal/ or /gr-el/tickets/music/festival/x/y/
     detail: /^https:\/\/www\.more\.com\/gr-el\/tickets\/[a-z-]+\/[^?#]+\/$/,
-    // Category pages themselves also match the pattern above; skip them.
-    exclude: /^https:\/\/www\.more\.com\/gr-el\/tickets\/[a-z-]+\/$/,
+    // Category pages also match the pattern above; skip them, along with the
+    // city and sport menu links that appear on every page.
+    exclude: /^https:\/\/www\.more\.com\/gr-el\/tickets\/([a-z-]+|city\/[^/]+|sports\/(football|basket))\/$/,
     maxDetails: 30,
   },
   {
@@ -33,10 +34,11 @@ export const SOURCES = [
       'https://www.athinorama.gr/music/guide/all/',
       'https://www.athinorama.gr/theatre/guide/',
       'https://www.athinorama.gr/texnes/guide/',
-      'https://www.athinorama.gr/child/guide/',
+      'https://www.athinorama.gr/theatre/guide/paidikes_parastaseis/',
     ],
-    // e.g. /music/gig/david_morales-10091025/ , /theatre/performance/x-123/
-    detail: /^https:\/\/www\.athinorama\.gr\/(music|theatre|texnes|child)\/[a-z_]+\/[^/?#]+-\d+\/?$/,
+    // e.g. /music/gig/david_morales-10091025/ , /theatre/performance/x-123/ , /texnes/event/x-123/
+    // (not /theatre/halls/ or /texnes/place/, which are venue pages)
+    detail: /^https:\/\/www\.athinorama\.gr\/(music\/gig|theatre\/performance|texnes\/event)\/[^/?#]+-\d+\/?$/,
     maxDetails: 30,
   },
   {
