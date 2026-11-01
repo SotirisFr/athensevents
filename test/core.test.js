@@ -85,3 +85,18 @@ test('extractLinks reads card text and decodes entities', () => {
   assert.equal(links.length, 2);
   assert.equal(links[0].context, 'Jazz & Blues 5 Νοε – Gazarte');
 });
+
+import { spreadAcross, isSameShow } from '../src/search.js';
+
+test('spreadAcross alternates between listing pages', () => {
+  const links = [0, 0, 0, 0, 1, 2, 2].map((group, i) => ({ url: `u${i}`, group }));
+  assert.deepEqual(spreadAcross(links, 4).map((l) => l.url), ['u0', 'u4', 'u5', 'u1']);
+});
+
+test('isSameShow matches a longer title on the same date', () => {
+  const a = { title: 'Pablo Ziegler', occurrences: [{ start: '2026-11-05T21:00' }] };
+  const b = { title: 'PABLO ZIEGLER TRIO', occurrences: [{ start: '2026-11-05T21:30' }] };
+  assert.ok(isSameShow(a, b));
+  assert.ok(!isSameShow(a, { ...b, occurrences: [{ start: '2026-11-06T21:30' }] }));
+  assert.ok(!isSameShow({ ...a, title: 'Jazz' }, { ...b, title: 'Jazz Night' }));
+});

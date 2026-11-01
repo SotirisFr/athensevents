@@ -144,22 +144,60 @@ export function matches(ev, q) {
 }
 
 /**
+ * Takes up to `max` links, alternating between the listing pages they came
+ * from, so that one long listing (more.com's music) does not crowd out the
+ * others (theatre, kids, stand-up).
+ */
+export function spreadAcross(links, max) {
+  const groups = new Map();
+  for (const l of links) {
+    if (!groups.has(l.group)) groups.set(l.group, []);
+    groups.get(l.group).push(l);
+  }
+  const queues = [...groups.values()];
+  const out = [];
+  while (out.length < max && queues.some((g) => g.length)) {
+    for (const g of queues) if (g.length && out.length < max) out.push(g.shift());
+  }
+  return out;
+}
+
+/**
+ * Two listings of the same show, for example "Pablo Ziegler" on Athinorama and
+ * "PABLO ZIEGLER TRIO" on more.com: one title contains the other and they
+ * share a date (or the same run).
+ */
+export function isSameShow(a, b) {
+  const ta = normalizeTitle(a.title);
+  const tb = normalizeTitle(b.title);
+  if (ta === tb) return true;
+  const [short, long] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  if (short.length < 5 || !` ${long} `.includes(` ${short} `)) return false;
+  const days = (e) => new Set(e.occurrences.map((o) => dateOf(o.start)));
+  const da = days(a);
+  if ([...days(b)].some((d) => da.has(d))) return true;
+  return !da.size && !b.occurrences.length && a.run_start === b.run_start;
+}
+
+/**
  * Runs a search. `emit` receives progress messages and each matching event
  * as soon as it is ready.
  */
 export async function search(q, emit) {
-  const found = new Set();
+  const found = [];
 
   await Promise.all(
     SOURCES.map(async (source) => {
       try {
         // 1. Listing pages.
         const links = new Map();
-        for (const listing of source.listings) {
+        for (const [group, listing] of source.listings.entries()) {
           try {
             const page = await fetchPage(listing);
             for (const l of extractLinks(page.html, page.url, source)) {
-              if (!links.has(l.url) || l.context.length > links.get(l.url).context.length) links.set(l.url, l);
+              const prev = links.get(l.url);
+              if (!prev) links.set(l.url, { ...l, group });
+              else if (l.context.length > prev.context.length) prev.context = l.context;
             }
           } catch (e) {
             emit({ type: 'warn', text: `${source.name}: δεν διαβάστηκε η σελίδα ${listing} (${e.message})` });
@@ -177,7 +215,7 @@ export async function search(q, emit) {
         if (!fresh.length) return;
 
         // 2. Which links are worth opening.
-        const picked = (await pickLinks(fresh, q.from, q.to)).slice(0, source.maxDetails);
+        const picked = spreadAcross(await pickLinks(fresh, q.from, q.to), source.maxDetails);
         emit({ type: 'progress', text: `${source.name}: ανοίγουν ${picked.length} σελίδες εκδηλώσεων` });
 
         // 3. Read event pages and summarize them in batches.
@@ -218,13 +256,12 @@ export async function search(q, emit) {
 
   // The same show is often listed on more than one site; keep the first.
   function report(ev) {
-    const key = normalizeTitle(ev.title);
-    if (!ev.is_event || !ev.in_attica || found.has(key)) return;
+    if (!ev.is_event || !ev.in_attica) return;
     const hit = matches(ev, q);
-    if (!hit) return;
-    found.add(key);
+    if (!hit || found.some((f) => isSameShow(f, hit))) return;
+    found.push(hit);
     emit({ type: 'event', event: hit });
   }
 
-  return found.size;
+  return found.length;
 }
