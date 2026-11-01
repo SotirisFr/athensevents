@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Εκδηλώσεις στην Αθήνα</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Εκδηλώσεις στην Αθήνα</h1>
+    <p class="sub">Συναυλίες, θέατρο, εκθέσεις και άλλα, από more.com, Αθηνόραμα και This is Athens.</p>
+  </header>
+
+  <form id="search">
+    <label>Από <input type="date" name="from" required></label>
+    <label>Έως <input type="date" name="to" required></label>
+    <label>Τιμή από (€) <input type="number" name="min" min="0" step="1" placeholder="0"></label>
+    <label>Τιμή έως (€) <input type="number" name="max" min="0" step="1" placeholder="χωρίς όριο"></label>
+    <label class="check"><input type="checkbox" name="unknown" checked> Και εκδηλώσεις χωρίς αναγραφόμενη τιμή</label>
+    <button type="submit">Αναζήτηση</button>
+  </form>
+
+  <section id="status" hidden>
+    <p id="status-line"></p>
+    <details><summary>Λεπτομέρειες</summary><ul id="log"></ul></details>
+  </section>
+
+  <nav id="filters" hidden></nav>
+  <main id="results"></main>
+
+  <template id="card">
+    <article class="event">
+      <div class="meta"><span class="category"></span><span class="source"></span></div>
+      <h2><a target="_blank" rel="noopener"></a></h2>
+      <p class="summary"></p>
+      <p class="where"></p>
+      <p class="when"></p>
+      <p class="price"></p>
+      <div class="actions"></div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
