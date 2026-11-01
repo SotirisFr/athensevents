@@ -10,9 +10,10 @@ Finds events in Athens for the dates and price range you choose, summarizes each
 ## Run it
 
 ```bash
-npm install        # first time only
 npm start
 ```
+
+There is nothing to install: the app uses only Node's built-in modules.
 
 The app opens in your browser at http://localhost:3737. Pick the dates, optionally a price range, and press **Αναζήτηση**. Events appear as they are found. Close the terminal (or press Ctrl+C) to stop it.
 

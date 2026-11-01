@@ -70,3 +70,12 @@ test('matches handles unknown prices and runs', () => {
 test('normalizeTitle ignores accents and punctuation', () => {
   assert.equal(normalizeTitle('Ο Γίγαντας!'), normalizeTitle('ο γιγαντας'));
 });
+
+test('extractLinks reads card text and decodes entities', () => {
+  const html = `<div class="item"><a href="/events/a"><img></a><a href='/events/a'>Jazz &amp; Blues</a><span>5 Νοε &ndash; Gazarte</span></div>
+    <div class="item"><a href="/events/b">Άλλο</a></div>`;
+  const src = { detail: /^https:\/\/x\.gr\/events\/[a-z]+$/ };
+  const links = extractLinks(html, 'https://x.gr/list', src);
+  assert.equal(links.length, 2);
+  assert.equal(links[0].context, 'Jazz & Blues 5 Νοε – Gazarte');
+});
